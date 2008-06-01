@@ -1,0 +1,42 @@
+StrokeDB is a distributed document-oriented database engine. 
+Main features are complete decentralization, JSON object format, 
+metadocuments, integration with runtime (it is just a ruby library). 
+
+
+= Starting points
+
+One of the most important concepts of StrokeDB is a StrokeDB::Document.
+
+
+= Installing StrokeDB
+
+=== Requirements
+
+Install ossp-uuid library:
+
+	$ sudo port install ossp-uuid # (MacOSX)
+
+You need to install few gems in order to run StrokeDB:
+
+	$ sudo gem install diff-lcs json RubyInline
+	
+If you can't install ossp-uuid for some reason, then install uuidtools gem as well.
+
+*Note*: There is no need in <tt>uuidtools</tt> if you use JRuby
+
+=== Getting source code
+
+	$ git clone git://github.com/yrashk/strokedb.git
+
+=== Installing rubygem
+
+	$ sudo gem install strokedb
+	
+=== <i>(Optional) Running test suite</i>
+
+	$ rake sup
+	
+=AUTHORS
+
+* Yurii Rashkovskii <yrashk@idbns.com>
+* Oleg Andreev <oleganza@idbns.com>

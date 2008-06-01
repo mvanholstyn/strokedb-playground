@@ -1,0 +1,93 @@
+
+Components of StrokeDB. How is it supposed to be for v. 0.1 or something.
+
+REQUIREMENTS
+
+Operations we need:
+
+  1) Create & store document.
+  2) Find document by UUID.
+  3) Find document by simple slot query.
+
+Facility we need:
+
+  1) Centralized setup. Effective read/write to large files.
+     Trying to be as fast, as SQLite.
+  2) Decentralized setup. Every component is chunked, EventMachine
+     protocols connect the chunks together.
+
+COMPONENTS
+
+  1) DataVolume. An append-only file with raw content addressable by 
+     "distributed pointer". Maximum file size is 64M (like in GFS).
+     
+     Operations: read(pointer), append(data)
+     
+  2) Distributed pointer: 160 bit pointer to a raw data. 
+     First 128 bits is a datavolume instance (file) UUID. 
+     Another 32 bits represent an offset in this file.
+  
+  4) SkiplistVolume consists of two files: 
+     1. Map file with header and bitmap 
+        (1 - chunk is in use, 0 - chunk is free).
+     2. Chunks file.
+     
+     For fixed-length items mapfile specifies exactly needed chunk size.
+     For variable-length items, mapfile specifies some average chunk size
+     and stores item length in 32 bytes before item data, and then item itself
+     in 1, 2 or more _contiguous_ chunks.
+     
+     To avoid fragmentation issues, we don't try to save space and split 
+     long data over single empty chunks. We just write to the end in case
+     required number of contiguous chunks is not already available.
+     
+     SkiplistVolume is not intended for large size items and/or large 
+     number of items. It scales by constructing higher level skiplists
+     mapping keys to lower-level skiplists. 
+     
+     Operations: find(key), find_nearest(key), insert(key)
+         
+     Very rare operation is "split" operation. You choose a level of skiplist
+     by which it should be splitted. Split operation yields N new skiplist 
+     volumes. It is done by walking through skiplist and copying items 
+     into newly created files. After copying is complete, old file is removed.
+     In case of failure, new files are simply discarded.
+     
+  5) Networking. EventMachine protocols for access to distributed volumes.
+     
+     1. Network interface to distributed datavolumes (fetching data 
+        by distributed pointer).
+     2. Protocols for asynchronous skiplists operations (find/insert).
+     3. Replication strategies: 
+        1. synchronized updates, 
+        2. session-based updates + safe automerge
+     4. Distributed transactions.
+
+  6) Indexes. There're many kinds of query out there. We are not going to
+     optimize them all. Instead, we're going to classify typical (i.e. 
+     "real world") queries and optimize them first with some default 
+     strategy. For less frequent queries we're going to provide some
+     adequate API to build custom index for specific cases.
+     For other, very-very specific cases, we leave a stable API for
+     low-level components like skiplists, networking protocols, datavolumes,
+     so that one can build a special index from scratch using our distributed
+     API.
+     
+     Hence, the plan:
+     1. Classify queries.
+     2. Define default strategy for 60% of queries.
+     3. Define an API for building indexes for other 30% of queries.
+     4. Investigate: how some very special datastructures _could possibly_
+        be done using our low-level distributed platform.
+
+
+
+
+
+
+
+
+  
+
+
+
